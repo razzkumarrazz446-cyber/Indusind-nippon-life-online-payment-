@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<title>indusind nippon life insurance</title>
+
+<style>
+
+*{
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+margin:0;
+background:#f4f4f4;
+min-height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+
+.box{
+width:95%;
+max-width:430px;
+background:white;
+padding:25px;
+border-radius:25px;
+box-shadow:0 10px 30px #ccc;
+}
+
+
+.logo{
+text-align:center;
+font-size:35px;
+font-weight:bold;
+color:red;
+}
+
+.logo span{
+color:#111;
+}
+
+
+input,button{
+width:100%;
+padding:14px;
+margin:8px 0;
+border-radius:20px;
+border:1px solid #ddd;
+}
+
+
+button{
+background:red;
+color:white;
+border:0;
+font-size:16px;
+}
+
+
+.card{
+
+background:#fff5f5;
+padding:18px;
+margin-top:20px;
+border-radius:20px;
+
+}
+
+
+.item{
+
+background:white;
+padding:12px;
+margin:10px 0;
+border-radius:15px;
+
+}
+
+
+.paybox{
+
+display:none;
+
+text-align:center;
+
+}
+
+
+.timer{
+
+font-size:24px;
+font-weight:bold;
+color:red;
+
+}
+
+
+.qr img{
+
+width:220px;
+
+}
+
+
+</style>
+
+
+</head>
+
+
+<body>
+
+
+<div class="box">
+
+
+<div class="logo">
+indusind nippon <span>life Insurance</span>
+</div>
+
+
+<h2>
+Enter Policy Number
+</h2>
+
+
+<input id="policyInput"
+placeholder="Enter Policy Number">
+
+
+<button onclick="searchPolicy()">
+Search
+</button>
+
+
+
+<div id="result"></div>
+
+
+<div class="paybox" id="paymentBox">
+
+
+<div class="timer">
+
+Payment Time:
+<span id="timer">
+10:00
+</span>
+
+</div>
+
+
+<h3>Scan & Pay</h3>
+
+
+<div class="qr">
+
+<img id="qrImage">
+
+</div>
+
+
+<p id="payAmount"></p>
+
+
+<button onclick="sendPayment()">
+
+✔ I Have Paid
+
+</button>
+
+
+</div>
+
+
+</div>
+
+
+
+
+<script>
+
+
+let customer=null;
+
+let timer;
+
+
+
+function searchPolicy(){
+
+
+let policy=document.getElementById("policyInput").value;
+
+
+
+let data=
+JSON.parse(localStorage.getItem("customers")) || [];
+
+
+
+let found=data.find(c=>c.policy==policy);
+
+
+
+if(!found){
+
+alert("Policy Not Found");
+
+return;
+
+}
+
+
+
+customer=found;
+
+
+
+document.getElementById("result").innerHTML=`
+
+<div class="card">
+
+
+<h2>Policy Details</h2>
+
+
+<div class="item">
+<b>Customer Name</b><br>
+${found.name}
+</div>
+
+
+<div class="item">
+<b>Policy Number</b><br>
+${found.policy}
+</div>
+
+
+<div class="item">
+<b>Premium</b><br>
+₹${found.premium}
+</div>
+
+
+<div class="item">
+<b>Renewal Discount</b><br>
+₹${found.discount}
+</div>
+
+
+<div class="item">
+<b>Total Due Premium</b><br>
+₹${found.final}
+</div>
+<div class="item">
+<b>Payment Status</b><br>
+${found.status=="Paid" ? "Payment Verified" : "Payment Under Verification"}
+</div>
+
+<button onclick="showPayment()">
+
+💳 Pay Now
+
+</button>
+
+
+</div>
+
+`;
+
+
+
+}
+
+
+
+
+
+
+
+function showPayment(){
+
+
+document.getElementById("paymentBox").style.display="block";
+
+
+let upi=
+
+customer.upi;
+
+
+let amount=
+
+customer.final;
+
+
+
+document.getElementById("qrImage").src=
+
+"https://quickchart.io/qr?text="+
+encodeURIComponent(
+"upi://pay?pa="+upi+
+"&pn=indusind nipponlife Insurance"+
+"&am="+amount+
+"&cu=INR"
+);
+
+
+
+document.getElementById("payAmount").innerHTML=
+
+"<b>Amount : ₹"+amount+"</b>";
+
+
+
+startTimer();
+
+
+}
+
+
+
+
+
+
+
+function startTimer(){
+
+
+let time=600;
+
+
+clearInterval(timer);
+
+
+
+timer=setInterval(function(){
+
+
+let min=Math.floor(time/60);
+
+let sec=time%60;
+
+
+document.getElementById("timer").innerHTML=
+
+min+":"+(sec<10?"0":"")+sec;
+
+
+
+time--;
+
+
+
+if(time<0){
+
+clearInterval(timer);
+
+document.getElementById("timer").innerHTML="Expired";
+
+}
+
+
+},1000);
+
+
+}
+
+
+
+
+
+
+
+function sendPayment(){
+
+
+let requests=
+
+JSON.parse(localStorage.getItem("paymentRequests")) || [];
+
+
+
+requests.push({
+
+name:customer.name,
+
+policy:customer.policy,
+
+amount:customer.final,
+
+status:"Pending"
+
+});
+
+
+
+localStorage.setItem(
+
+"paymentRequests",
+
+JSON.stringify(requests)
+
+);
+
+
+
+alert("Payment Request Sent");
+
+}
+
+
+</script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>indusind nippon life Admin Panel</title>
+
+<style>
+
+*{
+box-sizing:border-box;
+font-family:Arial, sans-serif;
+}
+
+body{
+margin:0;
+background:#f2f2f2;
+min-height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.box{
+width:95%;
+max-width:450px;
+background:white;
+padding:25px;
+border-radius:25px;
+box-shadow:0 10px 30px #ccc;
+}
+
+.logo{
+text-align:center;
+font-size:35px;
+font-weight:bold;
+color:red;
+}
+
+.logo span{
+color:#111;
+}
+
+input,button{
+width:100%;
+padding:14px;
+margin:8px 0;
+border-radius:20px;
+border:1px solid #ddd;
+}
+
+button{
+background:red;
+color:white;
+border:0;
+font-size:16px;
+}
+
+.dashboard{
+display:none;
+}
+
+.card{
+background:#fff5f5;
+padding:15px;
+border-radius:15px;
+margin-top:15px;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="box" id="loginBox">
+
+<div class="logo">
+indusind <span>Admin</span>
+</div>
+
+<h2>Admin Login</h2>
+
+<input id="loginId" placeholder="Login ID">
+
+<input id="loginPass" type="password" placeholder="Password">
+
+
+<button onclick="login()">
+Login
+</button>
+
+
+</div>
+
+
+
+
+
+<div class="box dashboard" id="dashboard">
+
+
+<div class="logo">
+KJJ <span>Panel</span>
+</div>
+
+
+<h2 id="title">
+Add Customer
+</h2>
+
+
+<input id="name" placeholder="Customer Name">
+
+<input id="mobile" placeholder="Mobile Number">
+
+<input id="policy" placeholder="Policy Number">
+
+<input id="premium" type="number" placeholder="Premium Amount" oninput="calculate()">
+
+<input id="discount" type="number" placeholder="Renewal Discount" oninput="calculate()">
+
+<input id="final" placeholder="Final Due Premium" readonly>
+
+<input id="upi" placeholder="UPI ID">
+
+
+<button onclick="saveCustomer()">
+Save Customer
+</button>
+
+
+<button onclick="showCustomers()">
+Customer List
+</button>
+
+
+<div id="list"></div>
+
+
+<h2>Payment Requests</h2>
+
+
+<button onclick="showRequests()">
+Refresh Requests
+</button>
+
+
+<div id="requests"></div>
+
+
+</div>
+
+
+
+<script>
+
+let editIndex=-1;
+
+
+
+function login(){
+
+let id=document.getElementById("loginId").value;
+
+let pass=document.getElementById("loginPass").value;
+
+
+if(id==="admin" && pass==="12345"){
+
+document.getElementById("loginBox").style.display="none";
+
+document.getElementById("dashboard").style.display="block";
+
+}
+
+else{
+
+alert("Wrong Login Details");
+
+}
+
+}
+
+
+
+function calculate(){
+
+let p=Number(document.getElementById("premium").value)||0;
+
+let d=Number(document.getElementById("discount").value)||0;
+
+
+document.getElementById("final").value=p-d;
+
+}
+function saveCustomer(){
+
+let data =
+JSON.parse(localStorage.getItem("customers")) || [];
+
+
+let oldStatus="Pending";
+
+if(editIndex!=-1 && data[editIndex]){
+
+oldStatus=data[editIndex].status || "Pending";
+
+}
+
+
+let customer={
+
+name:document.getElementById("name").value,
+
+mobile:document.getElementById("mobile").value,
+
+policy:document.getElementById("policy").value,
+
+premium:document.getElementById("premium").value,
+
+discount:document.getElementById("discount").value,
+
+final:document.getElementById("final").value,
+
+upi:document.getElementById("upi").value,
+
+status:oldStatus
+
+};
+
+
+
+if(editIndex==-1){
+
+data.push(customer);
+
+}
+
+else{
+
+data[editIndex]=customer;
+
+editIndex=-1;
+
+}
+
+
+localStorage.setItem(
+"customers",
+JSON.stringify(data)
+);
+
+
+alert("Customer Saved");
+
+clearForm();
+
+showCustomers();
+
+}
+
+
+
+
+
+function clearForm(){
+
+document.getElementById("name").value="";
+
+document.getElementById("mobile").value="";
+
+document.getElementById("policy").value="";
+
+document.getElementById("premium").value="";
+
+document.getElementById("discount").value="";
+
+document.getElementById("final").value="";
+
+document.getElementById("upi").value="";
+
+document.getElementById("title").innerHTML="Add Customer";
+
+}
+
+
+
+
+
+function showCustomers(){
+
+let data =
+JSON.parse(localStorage.getItem("customers")) || [];
+
+
+let html="";
+
+
+data.forEach((c,index)=>{
+
+
+let link="customer.html?policy="+c.policy;
+
+
+html+=`
+
+<div class="card">
+
+<b>Name:</b> ${c.name || ""}<br>
+
+<b>Policy:</b> ${c.policy || ""}<br>
+
+<b>Final Premium:</b> ₹${c.final || 0}<br>
+
+<b>UPI:</b> ${c.upi || ""}<br>
+
+<b>Status:</b> ${c.status || "Pending"}
+
+
+<button onclick="copyLink('${link}')">
+📋 Copy Customer Link
+</button>
+
+
+<button onclick="editCustomer(${index})">
+✏️ Edit
+</button>
+
+
+<button onclick="deleteCustomer(${index})">
+🗑 Delete
+</button>
+
+
+</div>
+
+`;
+
+});
+
+
+document.getElementById("list").innerHTML=html;
+
+
+}
+
+
+
+
+
+function editCustomer(index){
+
+let data =
+JSON.parse(localStorage.getItem("customers")) || [];
+
+
+let c=data[index];
+
+
+document.getElementById("name").value=c.name || "";
+
+document.getElementById("mobile").value=c.mobile || "";
+
+document.getElementById("policy").value=c.policy || "";
+
+document.getElementById("premium").value=c.premium || "";
+
+document.getElementById("discount").value=c.discount || "";
+
+document.getElementById("final").value=c.final || "";
+
+document.getElementById("upi").value=c.upi || "";
+
+
+editIndex=index;
+
+
+document.getElementById("title").innerHTML="Edit Customer";
+
+
+window.scrollTo(0,0);
+
+}
+
+
+
+
+
+function deleteCustomer(index){
+
+let data =
+JSON.parse(localStorage.getItem("customers")) || [];
+
+
+if(confirm("Delete Customer?")){
+
+
+data.splice(index,1);
+
+
+localStorage.setItem(
+"customers",
+JSON.stringify(data)
+);
+
+
+showCustomers();
+
+}
+
+}
+
+
+
+
+
+function copyLink(link){
+
+navigator.clipboard.writeText(link);
+
+alert("Customer Link Copied");
+
+}
+
+
+
+
+
+function showRequests(){
+
+let data =
+JSON.parse(localStorage.getItem("paymentRequests")) || [];
+
+
+let html="";
+
+
+if(data.length==0){
+
+document.getElementById("requests").innerHTML="No Payment Request";
+
+return;
+
+}
+
+
+
+data.forEach((r,index)=>{
+
+
+html+=`
+
+<div class="card">
+
+<b>Name:</b> ${r.name}<br>
+
+<b>Policy:</b> ${r.policy}<br>
+
+<b>Amount:</b> ₹${r.amount}<br>
+
+<b>Status:</b> ${r.status || "Pending"}
+
+
+<button onclick="updateStatus(${index},'Paid')">
+✅ Paid
+</button>
+
+
+<button onclick="updateStatus(${index},'Unpaid')">
+❌ Unpaid
+</button>
+
+
+</div>
+
+`;
+
+});
+
+
+document.getElementById("requests").innerHTML=html;
+
+
+}
+
+
+
+
+
+function updateStatus(index,status){
+
+let requests =
+JSON.parse(localStorage.getItem("paymentRequests")) || [];
+
+
+let policy=requests[index].policy;
+
+
+requests[index].status=status;
+
+
+localStorage.setItem(
+"paymentRequests",
+JSON.stringify(requests)
+);
+
+
+
+let customers =
+JSON.parse(localStorage.getItem("customers")) || [];
+
+
+customers.forEach(c=>{
+
+if(c.policy==policy){
+
+c.status=status;
+
+}
+
+});
+
+
+localStorage.setItem(
+"customers",
+JSON.stringify(customers)
+);
+
+
+alert("Status Updated");
+
+showRequests();
+
+}
+
+</script>
+
+</body>
+
+</html>
